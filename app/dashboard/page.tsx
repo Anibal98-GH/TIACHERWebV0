@@ -34,8 +34,8 @@ export default function Dashboard() {
       method: "GET",
       credentials: "include",
       headers: {
-          "Authorization": "Bearer " + localStorage.getItem("token")
-        },
+        Authorization: "Bearer " + localStorage.getItem("token"),
+      },
     })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -134,7 +134,7 @@ export default function Dashboard() {
         method: "POST",
         credentials: "include",
         headers: {
-          "Authorization": "Bearer " + localStorage.getItem("token")
+          Authorization: "Bearer " + localStorage.getItem("token"),
         },
         body: formData,
       })
@@ -163,10 +163,10 @@ export default function Dashboard() {
   }
 
   const sliderSettings = {
-    dots: true,
+    dots: false,
     infinite: true,
     speed: 500,
-    slidesToShow: 3, // Cambiado de 1 a 3 para mostrar tres modelos a la vez
+    slidesToShow: 3,
     slidesToScroll: 1,
     responsive: [
       {
