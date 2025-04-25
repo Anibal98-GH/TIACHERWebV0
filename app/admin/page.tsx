@@ -25,11 +25,11 @@ export default function Admin() {
   const [error, setError] = useState("")
   const router = useRouter()
 
-  // Cargar usuarios al montar el componente
+ 
   useEffect(() => {
     // Verificar si el usuario está autenticado y es administrador
-    const email = localStorage.getItem("userEmail")
-    if (!email) {
+    const token = localStorage.getItem("token")
+    if (!token) {
       router.push("/login")
       return
     }
@@ -47,7 +47,7 @@ export default function Admin() {
         method: "GET",
         credentials: "include",
         headers: {
-          Authorization: "Bearer " + localStorage.getItem("token"),
+          Authorization: "Bearer " + token,
         },
       })
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
@@ -86,7 +86,7 @@ export default function Admin() {
 
         headers: {
           "Content-Type": "application/json",
-          Authorization: "Bearer " + localStorage.getItem("token"),
+          Authorization: "Bearer " + token,
         },
         body: JSON.stringify({ rol: nuevoRol }),
         credentials: "include",

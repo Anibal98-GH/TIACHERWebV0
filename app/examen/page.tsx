@@ -41,13 +41,19 @@ export default function ExamenCreado() {
 
   // Al montarse, cargamos de localStorage
   useEffect(() => {
-    // Cargar ID del examen
+    const token = localStorage.getItem("token")
+    if (!token) {
+        router.push("/login")
+        return
+    }
     const id = localStorage.getItem("examId")
-    console.log(id)
-    if (id) {
+    if (!id) {
+        router.push("/dashboard")
+        return
+    }else{
       setExamId(id)
     }
-
+    console.log(id)
     // Cargar metadata
     const rawMeta = localStorage.getItem("examMeta")
     if (rawMeta) {

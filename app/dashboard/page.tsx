@@ -26,7 +26,14 @@ export default function Dashboard() {
   const [isGenerating, setIsGenerating] = useState(false) // Nuevo estado para controlar si se está generando el examen
   const router = useRouter()
 
+
   useEffect(() => {
+    
+    const token = localStorage.getItem("token")
+    if (!token) {
+        router.push("/login")
+        return
+    }
     const rol = localStorage.getItem("rol") || ""
     setIsAdmin(rol == "2")
 
