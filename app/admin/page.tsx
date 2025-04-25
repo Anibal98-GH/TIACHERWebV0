@@ -24,21 +24,21 @@ export default function Admin() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState("")
   const router = useRouter()
+  const [token, setToken] = useState<string | null>(null)
 
- 
   useEffect(() => {
     // Verificar si el usuario está autenticado y es administrador
-    const token = localStorage.getItem("token")
-    if (!token) {
+    const tokenFromStorage = localStorage.getItem("token")
+    if (!tokenFromStorage) {
       router.push("/login")
       return
     }
-
+    setToken(tokenFromStorage)
     // Cargar la lista de usuarios
-    cargarUsuarios()
+    cargarUsuarios(tokenFromStorage)
   }, [router])
 
-  const cargarUsuarios = async () => {
+  const cargarUsuarios = async (tokenValue: string) => {
     setIsLoading(true)
     setError("")
 
@@ -47,7 +47,7 @@ export default function Admin() {
         method: "GET",
         credentials: "include",
         headers: {
-          Authorization: "Bearer " + token,
+          Authorization: "Bearer " + tokenValue,
         },
       })
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
@@ -80,10 +80,11 @@ export default function Admin() {
   }
 
   const cambiarRol = async (id: number, nuevoRol: string) => {
+    if (!token) return
+
     try {
       await fetch(`${API_URL}/api/admin/users/${id}/rol`, {
         method: "PUT",
-
         headers: {
           "Content-Type": "application/json",
           Authorization: "Bearer " + token,
