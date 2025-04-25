@@ -11,7 +11,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 // URL base del backend
-const API_URL = "http://127.0.0.1:5000"
+const API_URL = "https://9aca-2a01-4f8-1c1c-7c0e-00-1.ngrok-free.app"
 
 // Tipo para una respuesta
 interface Respuesta {
@@ -217,7 +217,7 @@ export default function ExamenCreado() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer " + localStorage.getItem("token")
+          Authorization: "Bearer " + localStorage.getItem("token"),
         },
         body: JSON.stringify(datosExamen),
         credentials: "include",

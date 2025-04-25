@@ -17,7 +17,7 @@ interface Usuario {
 }
 
 // URL base del backend
-const API_URL = "http://127.0.0.1:5000"
+const API_URL = "https://9aca-2a01-4f8-1c1c-7c0e-00-1.ngrok-free.app"
 
 export default function Admin() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
@@ -47,9 +47,8 @@ export default function Admin() {
         method: "GET",
         credentials: "include",
         headers: {
-          "Authorization": "Bearer " + localStorage.getItem("token")
-        }
-        
+          Authorization: "Bearer " + localStorage.getItem("token"),
+        },
       })
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
 
@@ -84,10 +83,10 @@ export default function Admin() {
     try {
       await fetch(`${API_URL}/api/admin/users/${id}/rol`, {
         method: "PUT",
-        
+
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer " + localStorage.getItem("token")
+          Authorization: "Bearer " + localStorage.getItem("token"),
         },
         body: JSON.stringify({ rol: nuevoRol }),
         credentials: "include",

@@ -15,7 +15,7 @@ import "slick-carousel/slick/slick-theme.css"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
-const API_URL = "http://127.0.0.1:5000"
+const API_URL = "https://9aca-2a01-4f8-1c1c-7c0e-00-1.ngrok-free.app"
 export default function Dashboard() {
   const [aiModels, setAiModels] = useState<{ name: string; value: string; image: string }[]>([])
   const [selectedModel, setSelectedModel] = useState("")

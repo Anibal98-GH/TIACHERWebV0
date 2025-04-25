@@ -3,8 +3,13 @@ import "./globals.css"
 import type React from "react"
 
 export const metadata: Metadata = {
-  title: "Analizador de Archivos con IA",
-  description: "Sube y analiza archivos usando varios modelos de IA",
+  title: "TIACHER - Generador de Exámenes",
+  description: "Sube y analiza archivos usando varios modelos de IA para generar exámenes tipo test",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
+  },
     generator: 'v0.dev'
 }
 
@@ -15,6 +20,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
+      <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+      </head>
       <body>{children}</body>
     </html>
   )
