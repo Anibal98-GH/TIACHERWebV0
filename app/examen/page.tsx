@@ -332,7 +332,7 @@ export default function ExamenCreado() {
                 <Input value={subject} onChange={(e) => setSubject(e.target.value)} className="border-blue-200" />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-blue-700 mb-1">Descripción</label>
+                <label className="block text-sm font-medium text-blue-700 mb-1">Normas a tener en cuenta</label>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
