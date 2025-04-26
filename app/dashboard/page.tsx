@@ -4,7 +4,7 @@ import type React from "react"
 import { useState, useEffect, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Upload, FileText, LogOut, BookOpen, Search, Settings } from "lucide-react"
+import { Upload, FileText, LogOut, BookOpen, Search, Settings, ChevronLeft, ChevronRight } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -17,6 +17,37 @@ import { useRouter } from "next/navigation"
 
 const API_URL = "https://9aca-2a01-4f8-1c1c-7c0e-00-1.ngrok-free.app"
 
+// Componentes personalizados para las flechas del carrusel
+const PrevArrow = (props: any) => {
+  const { className, style, onClick } = props
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white rounded-full p-2 shadow-md focus:outline-none"
+      style={{ ...style, left: "-20px", display: "block" }}
+      aria-label="Anterior"
+    >
+      <ChevronLeft className="h-6 w-6 text-blue-600" />
+    </button>
+  )
+}
+
+const NextArrow = (props: any) => {
+  const { className, style, onClick } = props
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white rounded-full p-2 shadow-md focus:outline-none"
+      style={{ ...style, right: "-20px", display: "block" }}
+      aria-label="Siguiente"
+    >
+      <ChevronRight className="h-6 w-6 text-blue-600" />
+    </button>
+  )
+}
+
 export default function Dashboard() {
   const [aiModels, setAiModels] = useState<{ name: string; value: string; image: string }[]>([])
   const [selectedModel, setSelectedModel] = useState("")
@@ -27,13 +58,11 @@ export default function Dashboard() {
   const [isGenerating, setIsGenerating] = useState(false) // Nuevo estado para controlar si se está generando el examen
   const router = useRouter()
 
-
   useEffect(() => {
-    
     const token = localStorage.getItem("token")
     if (!token) {
-        router.push("/login")
-        return
+      router.push("/login")
+      return
     }
     const rol = localStorage.getItem("rol") || ""
     setIsAdmin(rol == "2")
@@ -122,6 +151,10 @@ export default function Dashboard() {
     }
   }
 
+  const removeFile = (indexToRemove: number) => {
+    setFiles(files.filter((_, index) => index !== indexToRemove))
+  }
+
   const handleGenerate = async (type: "exam" | "exercise") => {
     if (!selectedModel || files.length === 0 || isGenerating) return
 
@@ -176,6 +209,8 @@ export default function Dashboard() {
     speed: 500,
     slidesToShow: 3,
     slidesToScroll: 1,
+    prevArrow: <PrevArrow />,
+    nextArrow: <NextArrow />,
     responsive: [
       {
         breakpoint: 1024,
@@ -274,11 +309,33 @@ export default function Dashboard() {
               {files.length > 0 && (
                 <div className="mt-4">
                   <h3 className="font-semibold text-blue-700">Archivos subidos:</h3>
-                  <ul className="list-disc list-inside">
+                  <ul className="list-none space-y-2 mt-2">
                     {files.map((file, idx) => (
-                      <li key={file.name + idx} className="flex items-center text-blue-600">
-                        <FileText className="mr-2 h-4 w-4" />
-                        {file.name}
+                      <li key={file.name + idx} className="flex items-center justify-between bg-blue-50 p-2 rounded-lg">
+                        <div className="flex items-center text-blue-600">
+                          <FileText className="mr-2 h-4 w-4" />
+                          <span className="truncate max-w-[250px]">{file.name}</span>
+                        </div>
+                        <button
+                          onClick={() => removeFile(idx)}
+                          className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+                          aria-label="Eliminar archivo"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                          </svg>
+                        </button>
                       </li>
                     ))}
                   </ul>
@@ -312,35 +369,37 @@ export default function Dashboard() {
                   className="pl-10 border-blue-200 focus:border-blue-400 focus:ring-blue-400"
                 />
               </div>
-              {filteredModels.length > 0 ? (
-                <Slider {...sliderSettings}>
-                  {filteredModels.map((model, index) => (
-                    <div key={index} className="px-2">
-                      <div
-                        className={`p-4 rounded-xl text-center cursor-pointer transition-all ${
-                          selectedModel === model
-                            ? "bg-blue-600 text-white"
-                            : "bg-blue-100 text-blue-800 hover:bg-blue-200"
-                        }`}
-                        onClick={() => !autoSelect && setSelectedModel(model)}
-                      >
-                        <div className="flex justify-center items-center h-24 mb-2">
-                          <img
-                            src={model.image || "/placeholder.svg"}
-                            alt={model.name}
-                            className="max-h-full max-w-full object-contain rounded-lg"
-                          />
+              <div className="relative px-8 mx-5">
+                {filteredModels.length > 0 ? (
+                  <Slider {...sliderSettings}>
+                    {filteredModels.map((model, index) => (
+                      <div key={index} className="px-2">
+                        <div
+                          className={`p-4 rounded-xl text-center cursor-pointer transition-all ${
+                            selectedModel === model
+                              ? "bg-blue-600 text-white"
+                              : "bg-blue-100 text-blue-800 hover:bg-blue-200"
+                          }`}
+                          onClick={() => !autoSelect && setSelectedModel(model)}
+                        >
+                          <div className="flex justify-center items-center h-24 mb-2">
+                            <img
+                              src={model.image || "/placeholder.svg"}
+                              alt={model.name}
+                              className="max-h-full max-w-full object-contain rounded-lg"
+                            />
+                          </div>
+                          <p className="text-sm font-medium">{model.name}</p>
                         </div>
-                        <p className="text-sm font-medium">{model.name}</p>
                       </div>
-                    </div>
-                  ))}
-                </Slider>
-              ) : (
-                <p className="text-center text-blue-500">
-                  No se encontraron modelos de IA que coincidan con tu búsqueda.
-                </p>
-              )}
+                    ))}
+                  </Slider>
+                ) : (
+                  <p className="text-center text-blue-500">
+                    No se encontraron modelos de IA que coincidan con tu búsqueda.
+                  </p>
+                )}
+              </div>
               {selectedModel && (
                 <p className="mt-4 text-center font-medium text-blue-700">Modelo seleccionado: {selectedModel.name}</p>
               )}

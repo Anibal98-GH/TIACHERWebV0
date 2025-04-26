@@ -62,3 +62,42 @@
     font-family: "CHRONICAPRO", system-ui, sans-serif;
   }
 }
+
+/* Estilos personalizados para el carrusel */
+.slick-prev,
+.slick-next {
+  z-index: 20 !important;
+  width: 40px !important;
+  height: 40px !important;
+}
+
+.slick-prev:before,
+.slick-next:before {
+  display: none !important;
+}
+
+/* Asegurar que los botones de flecha sean clickeables */
+.slick-arrow {
+  cursor: pointer !important;
+  opacity: 1 !important;
+}
+
+/* Mejorar la visibilidad de las flechas */
+.slick-arrow:hover {
+  opacity: 1 !important;
+}
+
+/* Estilo para el botón de eliminar archivo */
+.file-remove-button {
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.file-remove-button:hover {
+  opacity: 1;
+}
+
+/* Asegurar que el contenedor del slider no interfiera con los clics */
+.slick-slider {
+  overflow: visible !important;
+}
