@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Upload, FileText, LogOut, BookOpen, Search, Settings, ChevronLeft, ChevronRight } from "lucide-react"
@@ -17,46 +17,43 @@ import { useRouter } from "next/navigation"
 
 const API_URL = "https://9aca-2a01-4f8-1c1c-7c0e-00-1.ngrok-free.app"
 
-// Componentes personalizados para las flechas del carrusel
-const PrevArrow = (props: any) => {
-  const { className, style, onClick } = props
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white rounded-full p-2 shadow-md focus:outline-none"
-      style={{ ...style, left: "-20px", display: "block" }}
-      aria-label="Anterior"
-    >
-      <ChevronLeft className="h-6 w-6 text-blue-600" />
-    </button>
-  )
-}
-
-const NextArrow = (props: any) => {
-  const { className, style, onClick } = props
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-white/80 hover:bg-white rounded-full p-2 shadow-md focus:outline-none"
-      style={{ ...style, right: "-20px", display: "block" }}
-      aria-label="Siguiente"
-    >
-      <ChevronRight className="h-6 w-6 text-blue-600" />
-    </button>
-  )
-}
-
 export default function Dashboard() {
   const [aiModels, setAiModels] = useState<{ name: string; value: string; image: string }[]>([])
-  const [selectedModel, setSelectedModel] = useState("")
+  const [selectedModel, setSelectedModel] = useState<{ name: string; value: string; image: string } | null>(null)
   const [files, setFiles] = useState<File[]>([])
   const [autoSelect, setAutoSelect] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [isAdmin, setIsAdmin] = useState(false)
-  const [isGenerating, setIsGenerating] = useState(false) // Nuevo estado para controlar si se está generando el examen
+  const [isGenerating, setIsGenerating] = useState(false)
   const router = useRouter()
+  const sliderRef = useRef<Slider>(null) // Referencia al carrusel
+
+  // Función para priorizar modelos específicos
+  const prioritizeModels = (models: { name: string; value: string; image: string }[]) => {
+    // Modelos prioritarios en el orden deseado
+    const priorityModels = ["Chat GPT 4.5 preview", "Grok 3 Beta", "Gemini 1.5 pro"]
+
+    // Crear una copia del array original para no modificarlo directamente
+    const modelsCopy = [...models]
+
+    // Array para almacenar los modelos priorizados
+    const prioritized: typeof models = []
+
+    // Buscar y extraer los modelos prioritarios en el orden especificado
+    priorityModels.forEach((priorityName) => {
+      // Buscar coincidencias parciales (case insensitive)
+      const index = modelsCopy.findIndex((model) => model.name.toLowerCase().includes(priorityName.toLowerCase()))
+
+      if (index !== -1) {
+        // Si se encuentra, añadirlo a los priorizados y eliminarlo de la copia
+        prioritized.push(modelsCopy[index])
+        modelsCopy.splice(index, 1)
+      }
+    })
+
+    // Devolver los modelos priorizados seguidos por el resto
+    return [...prioritized, ...modelsCopy]
+  }
 
   useEffect(() => {
     const token = localStorage.getItem("token")
@@ -80,7 +77,6 @@ export default function Dashboard() {
       })
       .then((data: Record<string, string>) => {
         const arr = Object.entries(data).map(([name, value]) => {
-          // Elige el logo según keywords en el nombre
           const key = name.toLowerCase()
           let imageURL: string
           if (key.includes("claude")) {
@@ -94,17 +90,26 @@ export default function Dashboard() {
           }
           return { name, value, image: imageURL }
         })
-        setAiModels(arr)
+
+        // Priorizar los modelos específicos
+        const prioritizedModels = prioritizeModels(arr)
+        setAiModels(prioritizedModels)
+
+        // Si hay modelos y autoSelect está activado, seleccionar el primero
+        if (prioritizedModels.length > 0 && autoSelect) {
+          setSelectedModel(prioritizedModels[0])
+        }
       })
       .catch((err) => {
         console.error("Error al cargar modelos:", err)
-        // Datos de ejemplo en caso de error
-        setAiModels([
+        // Datos de ejemplo en caso de error, también priorizados
+        const exampleModels = [
           { name: "OpenAI GPT 4o mini", value: "gpt-4o-mini", image: "/images/gpt-logo.png" },
           { name: "Claude 3.5 Sonnet", value: "claude-3-5-sonnet", image: "/images/claude-logo.png" },
           { name: "Gemini 1.5 Flash", value: "gemini-1.5-flash", image: "/images/gemini-logo.png" },
           { name: "Grok 1.5", value: "grok-1.5", image: "/images/grok-logo.png" },
-        ])
+        ]
+        setAiModels(prioritizeModels(exampleModels))
       })
   }, [])
 
@@ -115,27 +120,9 @@ export default function Dashboard() {
   useEffect(() => {
     if (!autoSelect || filteredModels.length === 0) return
 
-    // Búsqueda case-insensitive
-    const namesLc = filteredModels.map((m) => m.name.toLowerCase())
-
-    // 1) Intenta exact match "chat gpt 4.5 preview"
-    const idxExact = namesLc.findIndex((n) => n.includes("chat gpt 4.5 preview"))
-    if (idxExact !== -1) {
-      setSelectedModel(filteredModels[idxExact])
-      return
-    }
-
-    // 2) Filtra los que comienzan por "chat gpt 4."
-    const candidates = filteredModels.filter((m) => m.name.toLowerCase().startsWith("chat gpt 4."))
-    if (candidates.length > 0) {
-      const randomIndex = Math.floor(Math.random() * candidates.length)
-      setSelectedModel(candidates[randomIndex])
-      return
-    }
-
-    // 3) Si tampoco hay, al azar entre todos
-    const randomIndex = Math.floor(Math.random() * filteredModels.length)
-    setSelectedModel(filteredModels[randomIndex])
+    // Si hay modelos filtrados y autoSelect está activado, seleccionar el primero
+    // (que ya estará priorizado según nuestra lógica)
+    setSelectedModel(filteredModels[0])
   }, [autoSelect, filteredModels])
 
   const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -144,25 +131,10 @@ export default function Dashboard() {
     setFiles((prevFiles) => [...prevFiles, ...droppedFiles])
   }
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const selectedFiles = Array.from(e.target.files)
-      setFiles((prevFiles) => [...prevFiles, ...selectedFiles])
-    }
-  }
-
-  const removeFile = (indexToRemove: number) => {
-    setFiles(files.filter((_, index) => index !== indexToRemove))
-  }
-
   const handleGenerate = async (type: "exam" | "exercise") => {
     if (!selectedModel || files.length === 0 || isGenerating) return
-
-    // Activar el estado de generación
     setIsGenerating(true)
-
     try {
-      // 1) Creamos el FormData
       const formData = new FormData()
       formData.append("model", selectedModel.value)
       formData.append("type", type)
@@ -170,7 +142,6 @@ export default function Dashboard() {
         formData.append("files", file, file.name)
       })
 
-      // 2) Hacemos el POST como multipart/form-data
       const res = await fetch(`${API_URL}/api/exam/create`, {
         method: "POST",
         credentials: "include",
@@ -186,19 +157,14 @@ export default function Dashboard() {
         return
       }
 
-      // 3) Leemos la respuesta
       const data = await res.json()
-      console.log("Examen creado:", data)
-      console.log(data.id)
       localStorage.setItem("examId", data.id)
       localStorage.setItem("examData", JSON.stringify(data.preguntas))
-      // Por ejemplo, si data.examId existe:
       router.push(`/examen`)
     } catch (e: any) {
       console.error("Fallo en la petición:", e)
       alert("No se pudo conectar con el servidor.")
     } finally {
-      // Desactivar el estado de generación, aunque esto no se ejecutará si la redirección es exitosa
       setIsGenerating(false)
     }
   }
@@ -209,25 +175,21 @@ export default function Dashboard() {
     speed: 500,
     slidesToShow: 3,
     slidesToScroll: 1,
-    prevArrow: <PrevArrow />,
-    nextArrow: <NextArrow />,
+    arrows: false, // No usamos las flechas internas
     responsive: [
       {
         breakpoint: 1024,
-        settings: {
-          slidesToShow: 2,
-          slidesToScroll: 1,
-        },
+        settings: { slidesToShow: 2, slidesToScroll: 1 },
       },
       {
         breakpoint: 600,
-        settings: {
-          slidesToShow: 1,
-          slidesToScroll: 1,
-        },
+        settings: { slidesToShow: 1, slidesToScroll: 1 },
       },
     ],
   }
+
+  const handlePrev = () => sliderRef.current?.slickPrev()
+  const handleNext = () => sliderRef.current?.slickNext()
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 p-8">
@@ -248,188 +210,156 @@ export default function Dashboard() {
               </Button>
             )}
             <Button variant="outline" className="bg-red-500 text-white border-red-400 hover:bg-red-600" asChild>
-              <Link
-                href="/"
-                onClick={() => {
-                  localStorage.clear()
-                }}
-              >
+              <Link href="/" onClick={() => localStorage.clear()}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Cerrar Sesión
               </Link>
             </Button>
           </div>
         </div>
-        <div className="grid grid-cols-1 gap-8">
-          <Card className="border-blue-100 rounded-xl overflow-hidden">
-            <CardHeader className="bg-blue-50">
-              <CardTitle className="text-blue-700">Subir archivos</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div
-                className="border-2 border-dashed border-blue-200 rounded-xl p-8 text-center cursor-pointer hover:bg-blue-50 transition-colors"
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault()
-                  const droppedFiles = Array.from(e.dataTransfer.files)
-                  const pdfs = droppedFiles.filter(
-                    (f) => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"),
-                  )
-                  if (pdfs.length !== droppedFiles.length) {
+
+        <Card className="border-blue-100 rounded-xl overflow-hidden mb-8">
+          <CardHeader className="bg-blue-50">
+            <CardTitle className="text-blue-700">Subir archivos</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div
+              className="border-2 border-dashed border-blue-200 rounded-xl p-8 text-center cursor-pointer hover:bg-blue-50"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleFileDrop}
+              onClick={() => document.getElementById("fileInput")?.click()}
+            >
+              <Upload className="mx-auto h-12 w-12 text-blue-400" />
+              <p className="mt-2 text-sm text-blue-600">
+                Arrastra y suelta archivos PDF aquí, o haz clic para seleccionar
+              </p>
+              <input
+                id="fileInput"
+                type="file"
+                multiple
+                accept="application/pdf"
+                className="hidden"
+                onChange={(e) => {
+                  if (!e.target.files) return
+                  const sel = Array.from(e.target.files)
+                  const pdfs = sel.filter((f) => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"))
+                  if (pdfs.length !== sel.length) {
                     alert("Solo se permiten archivos PDF.")
                   }
                   setFiles((prev) => [...prev, ...pdfs])
                 }}
-                onClick={() => document.getElementById("fileInput")?.click()}
-              >
-                <Upload className="mx-auto h-12 w-12 text-blue-400" />
-                <p className="mt-2 text-sm text-blue-600">
-                  Arrastra y suelta archivos PDF aquí, o haz clic para seleccionar
-                </p>
-                <input
-                  id="fileInput"
-                  type="file"
-                  multiple
-                  accept="application/pdf"
-                  className="hidden"
-                  onChange={(e) => {
-                    if (!e.target.files) return
-                    const sel = Array.from(e.target.files)
-                    const pdfs = sel.filter(
-                      (f) => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"),
-                    )
-                    if (pdfs.length !== sel.length) {
-                      alert("Solo se permiten archivos PDF.")
-                    }
-                    setFiles((prev) => [...prev, ...pdfs])
-                  }}
-                />
-              </div>
+              />
+            </div>
+            {files.length > 0 && (
+              <ul className="mt-4 space-y-2">
+                {files.map((file, idx) => (
+                  <li key={file.name + idx} className="flex items-center justify-between bg-blue-50 p-2 rounded-lg">
+                    <div className="flex items-center text-blue-600">
+                      <FileText className="mr-2 h-4 w-4" />
+                      <span className="truncate max-w-[250px]">{file.name}</span>
+                    </div>
+                    <button
+                      onClick={() => setFiles(files.filter((_, i) => i !== idx))}
+                      className="text-red-500 hover:text-red-700"
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
 
-              {files.length > 0 && (
-                <div className="mt-4">
-                  <h3 className="font-semibold text-blue-700">Archivos subidos:</h3>
-                  <ul className="list-none space-y-2 mt-2">
-                    {files.map((file, idx) => (
-                      <li key={file.name + idx} className="flex items-center justify-between bg-blue-50 p-2 rounded-lg">
-                        <div className="flex items-center text-blue-600">
-                          <FileText className="mr-2 h-4 w-4" />
-                          <span className="truncate max-w-[250px]">{file.name}</span>
+        <Card className="border-blue-100 rounded-xl overflow-hidden">
+          <CardHeader className="bg-blue-50">
+            <CardTitle className="text-blue-700">Elegir modelo de IA</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="flex justify-between items-center mb-4">
+              <Label className="text-blue-800 font-semibold">Selección recomendada de modelo IA</Label>
+              <Switch id="auto-select" checked={autoSelect} onCheckedChange={setAutoSelect} />
+            </div>
+
+            {/* Barra de búsqueda */}
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-400" />
+              <Input
+                type="text"
+                placeholder="Buscar modelos de IA..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 border-blue-200 focus:border-blue-400 focus:ring-blue-400"
+              />
+            </div>
+
+            {/* Botones de navegación del carrusel */}
+            <div className="flex justify-end mb-4 space-x-4">
+              <button onClick={handlePrev} className="bg-white/80 hover:bg-white p-2 rounded-full shadow transition">
+                <ChevronLeft className="h-6 w-6 text-blue-600" />
+              </button>
+              <button onClick={handleNext} className="bg-white/80 hover:bg-white p-2 rounded-full shadow transition">
+                <ChevronRight className="h-6 w-6 text-blue-600" />
+              </button>
+            </div>
+
+            {/* Carrusel */}
+            <div className="relative px-8 mx-5">
+              {filteredModels.length > 0 ? (
+                <Slider {...sliderSettings} ref={sliderRef}>
+                  {filteredModels.map((model, index) => (
+                    <div key={index} className="px-2">
+                      <div
+                        className={`p-4 rounded-xl text-center cursor-pointer ${
+                          selectedModel?.value === model.value
+                            ? "bg-blue-600 text-white"
+                            : "bg-blue-100 text-blue-800 hover:bg-blue-200"
+                        }`}
+                        onClick={() => !autoSelect && setSelectedModel(model)}
+                      >
+                        <div className="flex justify-center items-center h-24 mb-2">
+                          <img
+                            src={model.image || "/placeholder.svg"}
+                            alt={model.name}
+                            className="max-h-full object-contain"
+                          />
                         </div>
-                        <button
-                          onClick={() => removeFile(idx)}
-                          className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
-                          aria-label="Eliminar archivo"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                          </svg>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-          <Card className="border-blue-100 rounded-xl overflow-hidden">
-            <CardHeader className="bg-blue-50">
-              <CardTitle className="text-blue-700">Elegir modelo de IA</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <Label htmlFor="auto-select" className="text-base font-semibold text-blue-800">
-                  Selección recomendada de modelo IA
-                </Label>
-                <Switch
-                  id="auto-select"
-                  checked={autoSelect}
-                  onCheckedChange={setAutoSelect}
-                  className="data-[state=checked]:bg-blue-600"
-                />
-              </div>
-              <div className="relative mb-4">
-                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-blue-400" />
-                <Input
-                  type="text"
-                  placeholder="Buscar modelos de IA..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 border-blue-200 focus:border-blue-400 focus:ring-blue-400"
-                />
-              </div>
-              <div className="relative px-8 mx-5">
-                {filteredModels.length > 0 ? (
-                  <Slider {...sliderSettings}>
-                    {filteredModels.map((model, index) => (
-                      <div key={index} className="px-2">
-                        <div
-                          className={`p-4 rounded-xl text-center cursor-pointer transition-all ${
-                            selectedModel === model
-                              ? "bg-blue-600 text-white"
-                              : "bg-blue-100 text-blue-800 hover:bg-blue-200"
-                          }`}
-                          onClick={() => !autoSelect && setSelectedModel(model)}
-                        >
-                          <div className="flex justify-center items-center h-24 mb-2">
-                            <img
-                              src={model.image || "/placeholder.svg"}
-                              alt={model.name}
-                              className="max-h-full max-w-full object-contain rounded-lg"
-                            />
-                          </div>
-                          <p className="text-sm font-medium">{model.name}</p>
-                        </div>
+                        <p className="text-sm font-medium">{model.name}</p>
                       </div>
-                    ))}
-                  </Slider>
-                ) : (
-                  <p className="text-center text-blue-500">
-                    No se encontraron modelos de IA que coincidan con tu búsqueda.
-                  </p>
-                )}
-              </div>
-              {selectedModel && (
-                <p className="mt-4 text-center font-medium text-blue-700">Modelo seleccionado: {selectedModel.name}</p>
+                    </div>
+                  ))}
+                </Slider>
+              ) : (
+                <p className="text-center text-blue-500">
+                  No se encontraron modelos de IA que coincidan con tu búsqueda.
+                </p>
               )}
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Mensaje de generación de examen */}
-          {isGenerating && (
-            <Alert className="bg-blue-50 border-blue-200 text-blue-800">
-              <div className="flex items-center">
-                <div className="mr-3 inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-blue-600 border-r-transparent"></div>
-                <AlertDescription className="font-medium">
-                  Se está generando el examen, espera por favor...
-                </AlertDescription>
-              </div>
-            </Alert>
-          )}
+            {selectedModel && (
+              <p className="mt-4 text-center font-medium text-blue-700">Modelo seleccionado: {selectedModel.name}</p>
+            )}
+          </CardContent>
+        </Card>
 
-          <div className="flex justify-center mt-6">
-            <Button
-              onClick={() => handleGenerate("exam")}
-              disabled={!selectedModel || files.length === 0 || isGenerating}
-              className={`flex items-center shadow-md rounded-xl ${
-                isGenerating ? "bg-blue-400 cursor-not-allowed" : "bg-blue-700 hover:bg-blue-800 text-white"
-              }`}
-            >
-              <BookOpen className="mr-2 h-4 w-4" />
-              {isGenerating ? "Generando examen..." : "Crear examen"}
-            </Button>
-          </div>
+        {isGenerating && (
+          <Alert className="mt-6 bg-blue-50 border-blue-200 text-blue-800">
+            <div className="flex items-center">
+              <div className="mr-3 animate-spin h-4 w-4 rounded-full border-2 border-solid border-blue-600 border-r-transparent"></div>
+              <AlertDescription>Se está generando el examen, espera por favor...</AlertDescription>
+            </div>
+          </Alert>
+        )}
+
+        <div className="flex justify-center mt-6">
+          <Button
+            onClick={() => handleGenerate("exam")}
+            disabled={!selectedModel || files.length === 0 || isGenerating}
+            className="flex items-center shadow-md rounded-xl bg-blue-700 hover:bg-blue-800 text-white"
+          >
+            <BookOpen className="mr-2 h-4 w-4" />
+            {isGenerating ? "Generando examen..." : "Crear examen"}
+          </Button>
         </div>
       </div>
     </div>
