@@ -66,7 +66,6 @@ export default function Dashboard() {
 
     fetch(`${API_URL}/api/models/all`, {
       method: "GET",
-      credentials: "include",
       headers: {
         Authorization: "Bearer " + localStorage.getItem("token"),
       },

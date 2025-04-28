@@ -24,6 +24,13 @@ export default function Login() {
     setIsLoading(true)
     setError("")
 
+    const token = localStorage.getItem("token")
+    if (token) {
+      router.push("/dashboard")
+      return
+    }
+
+
     try {
       const response = await fetch(`${API_URL}/api/login`, {
         method: "POST",

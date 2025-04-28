@@ -25,7 +25,12 @@ export default function Register() {
     setIsLoading(true)
     setError("")
     setSuccess("")
-
+    
+    const token = localStorage.getItem("token")
+    if (token) {
+      router.push("/dashboard")
+      return
+    }
     // Validar que las contraseñas coincidan
     if (password !== confirmPassword) {
       setError("Las contraseñas no coinciden")
