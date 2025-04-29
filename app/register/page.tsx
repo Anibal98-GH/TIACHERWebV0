@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 // URL base del proxy
-const API_BASE = "http://188.34.195.5";
+const API_BASE = "http://188.34.195.5/api";
 export default function Register() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
