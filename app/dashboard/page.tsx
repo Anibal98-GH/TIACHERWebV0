@@ -86,13 +86,11 @@ export default function Dashboard() {
         const response = await fetch(`${API_BASE}/models/all`, {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
             Accept: "application/json",
           },
-          // No es necesario incluir credentials cuando usamos el proxy
-          // ya que las cookies se enviarán automáticamente
         })
+
 
         if (!response.ok) {
           throw new Error(`Error HTTP: ${response.status}`)
