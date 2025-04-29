@@ -15,7 +15,8 @@ import "slick-carousel/slick/slick-theme.css"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
-const API_URL = "https://9aca-2a01-4f8-1c1c-7c0e-00-1.ngrok-free.app"
+// URL base del backend
+const API_URL = "https://7a55-2a01-4f8-1c1c-7c0e-00-1.ngrok-free.app"
 
 export default function Dashboard() {
   const [aiModels, setAiModels] = useState<{ name: string; value: string; image: string }[]>([])
@@ -25,6 +26,8 @@ export default function Dashboard() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isAdmin, setIsAdmin] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isLoadingModels, setIsLoadingModels] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const router = useRouter()
   const sliderRef = useRef<Slider>(null) // Referencia al carrusel
 
@@ -55,6 +58,15 @@ export default function Dashboard() {
     return [...prioritized, ...modelsCopy]
   }
 
+  // Datos de ejemplo para usar en caso de error
+  const exampleModels = [
+    { name: "Chat GPT 4.5 preview", value: "gpt-4.5-preview", image: "/images/gpt-logo.png" },
+    { name: "Grok 3 Beta", value: "grok-3-beta", image: "/images/grok-logo.png" },
+    { name: "Gemini 1.5 pro", value: "gemini-1.5-pro", image: "/images/gemini-logo.png" },
+    { name: "Claude 3.5 Sonnet", value: "claude-3-5-sonnet", image: "/images/claude-logo.png" },
+    { name: "OpenAI GPT 4o mini", value: "gpt-4o-mini", image: "/images/gpt-logo.png" },
+  ]
+
   useEffect(() => {
     const token = localStorage.getItem("token")
     if (!token) {
@@ -64,19 +76,30 @@ export default function Dashboard() {
     const rol = localStorage.getItem("rol") || ""
     setIsAdmin(rol == "2")
 
-    fetch(`${API_URL}/api/models/all`, {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        Authorization: "Bearer " + localStorage.getItem("token"),
-        "Content-Type": "application/json" 
-      },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json()
-      })
-      .then((data: Record<string, string>) => {
+    // Cargar los modelos de IA
+    const loadModels = async () => {
+      setIsLoadingModels(true)
+      setLoadError(null)
+
+      try {
+        // Intentar cargar desde la API
+        const response = await fetch(`${API_URL}/api/models/all`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          credentials: "include",
+        })
+
+        if (!response.ok) {
+          throw new Error(`Error HTTP: ${response.status}`)
+        }
+
+        const data = await response.json()
+
+        // Procesar los datos recibidos
         const arr = Object.entries(data).map(([name, value]) => {
           const key = name.toLowerCase()
           let imageURL: string
@@ -89,7 +112,7 @@ export default function Dashboard() {
           } else {
             imageURL = "/images/gpt-logo.png"
           }
-          return { name, value, image: imageURL }
+          return { name, value: value as string, image: imageURL }
         })
 
         // Priorizar los modelos específicos
@@ -97,21 +120,28 @@ export default function Dashboard() {
         setAiModels(prioritizedModels)
 
         // Si hay modelos y autoSelect está activado, seleccionar el primero
-        if (prioritizedModels.length > 0 && autoSelect) {
-          setSelectedModel(prioritizedModels[0])
+        if (prioritizedModels.length > 0) {
+          if (autoSelect) {
+            setSelectedModel(prioritizedModels[0])
+          }
         }
-      })
-      .catch((err) => {
-        console.error("Error al cargar modelos:", err)
-        // Datos de ejemplo en caso de error, también priorizados
-        const exampleModels = [
-          { name: "OpenAI GPT 4o mini", value: "gpt-4o-mini", image: "/images/gpt-logo.png" },
-          { name: "Claude 3.5 Sonnet", value: "claude-3-5-sonnet", image: "/images/claude-logo.png" },
-          { name: "Gemini 1.5 Flash", value: "gemini-1.5-flash", image: "/images/gemini-logo.png" },
-          { name: "Grok 1.5", value: "grok-1.5", image: "/images/grok-logo.png" },
-        ]
-        setAiModels(prioritizeModels(exampleModels))
-      })
+      } catch (error) {
+        console.error("Error al cargar modelos:", error)
+        setLoadError("No se pudieron cargar los modelos. Usando datos de ejemplo.")
+
+        // Usar datos de ejemplo en caso de error
+        setAiModels(exampleModels)
+
+        // Si autoSelect está activado, seleccionar el primer modelo de ejemplo
+        if (autoSelect && exampleModels.length > 0) {
+          setSelectedModel(exampleModels[0])
+        }
+      } finally {
+        setIsLoadingModels(false)
+      }
+    }
+
+    loadModels()
   }, [])
 
   const filteredModels = useMemo(() => {
@@ -129,7 +159,15 @@ export default function Dashboard() {
   const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     const droppedFiles = Array.from(e.dataTransfer.files)
-    setFiles((prevFiles) => [...prevFiles, ...droppedFiles])
+    const pdfs = droppedFiles.filter((f) => f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf"))
+    if (pdfs.length !== droppedFiles.length) {
+      alert("Solo se permiten archivos PDF.")
+    }
+    setFiles((prev) => [...prev, ...pdfs])
+  }
+
+  const removeFile = (indexToRemove: number) => {
+    setFiles(files.filter((_, index) => index !== indexToRemove))
   }
 
   const handleGenerate = async (type: "exam" | "exercise") => {
@@ -143,19 +181,30 @@ export default function Dashboard() {
         formData.append("files", file, file.name)
       })
 
+      const token = localStorage.getItem("token")
+      if (!token) {
+        throw new Error("No se encontró el token de autenticación")
+      }
+
       const res = await fetch(`${API_URL}/api/exam/create`, {
         method: "POST",
-        credentials: "include",
         headers: {
-          Authorization: "Bearer " + localStorage.getItem("token"),
+          Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
         body: formData,
       })
 
       if (!res.ok) {
-        const err = await res.json()
-        alert("Error: " + (err.message || res.statusText))
-        return
+        const errText = await res.text()
+        let errMsg = "Error desconocido"
+        try {
+          const errJson = JSON.parse(errText)
+          errMsg = errJson.message || errJson.error || `Error HTTP: ${res.status}`
+        } catch {
+          errMsg = errText || `Error HTTP: ${res.status}`
+        }
+        throw new Error(errMsg)
       }
 
       const data = await res.json()
@@ -164,7 +213,7 @@ export default function Dashboard() {
       router.push(`/examen`)
     } catch (e: any) {
       console.error("Fallo en la petición:", e)
-      alert("No se pudo conectar con el servidor.")
+      alert(`Error: ${e.message || "No se pudo conectar con el servidor."}`)
     } finally {
       setIsGenerating(false)
     }
@@ -252,22 +301,39 @@ export default function Dashboard() {
               />
             </div>
             {files.length > 0 && (
-              <ul className="mt-4 space-y-2">
-                {files.map((file, idx) => (
-                  <li key={file.name + idx} className="flex items-center justify-between bg-blue-50 p-2 rounded-lg">
-                    <div className="flex items-center text-blue-600">
-                      <FileText className="mr-2 h-4 w-4" />
-                      <span className="truncate max-w-[250px]">{file.name}</span>
-                    </div>
-                    <button
-                      onClick={() => setFiles(files.filter((_, i) => i !== idx))}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      ✕
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-4">
+                <h3 className="font-semibold text-blue-700">Archivos subidos:</h3>
+                <ul className="list-none space-y-2 mt-2">
+                  {files.map((file, idx) => (
+                    <li key={file.name + idx} className="flex items-center justify-between bg-blue-50 p-2 rounded-lg">
+                      <div className="flex items-center text-blue-600">
+                        <FileText className="mr-2 h-4 w-4" />
+                        <span className="truncate max-w-[250px]">{file.name}</span>
+                      </div>
+                      <button
+                        onClick={() => removeFile(idx)}
+                        className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+                        aria-label="Eliminar archivo"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -277,9 +343,16 @@ export default function Dashboard() {
             <CardTitle className="text-blue-700">Elegir modelo de IA</CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
-            <div className="flex justify-between items-center mb-4">
-              <Label className="text-blue-800 font-semibold">Selección recomendada de modelo IA</Label>
-              <Switch id="auto-select" checked={autoSelect} onCheckedChange={setAutoSelect} />
+            <div className="flex items-center justify-between mb-4">
+              <Label htmlFor="auto-select" className="text-base font-semibold text-blue-800">
+                Selección recomendada de modelo IA
+              </Label>
+              <Switch
+                id="auto-select"
+                checked={autoSelect}
+                onCheckedChange={setAutoSelect}
+                className="data-[state=checked]:bg-blue-600"
+              />
             </div>
 
             {/* Barra de búsqueda */}
@@ -294,48 +367,68 @@ export default function Dashboard() {
               />
             </div>
 
-            {/* Botones de navegación del carrusel */}
-            <div className="flex justify-end mb-4 space-x-4">
-              <button onClick={handlePrev} className="bg-white/80 hover:bg-white p-2 rounded-full shadow transition">
-                <ChevronLeft className="h-6 w-6 text-blue-600" />
-              </button>
-              <button onClick={handleNext} className="bg-white/80 hover:bg-white p-2 rounded-full shadow transition">
-                <ChevronRight className="h-6 w-6 text-blue-600" />
-              </button>
-            </div>
+            {loadError && (
+              <Alert className="mb-4 bg-yellow-50 border-yellow-200 text-yellow-800">
+                <AlertDescription>{loadError}</AlertDescription>
+              </Alert>
+            )}
 
-            {/* Carrusel */}
-            <div className="relative px-8 mx-5">
-              {filteredModels.length > 0 ? (
-                <Slider {...sliderSettings} ref={sliderRef}>
-                  {filteredModels.map((model, index) => (
-                    <div key={index} className="px-2">
-                      <div
-                        className={`p-4 rounded-xl text-center cursor-pointer ${
-                          selectedModel?.value === model.value
-                            ? "bg-blue-600 text-white"
-                            : "bg-blue-100 text-blue-800 hover:bg-blue-200"
-                        }`}
-                        onClick={() => !autoSelect && setSelectedModel(model)}
-                      >
-                        <div className="flex justify-center items-center h-24 mb-2">
-                          <img
-                            src={model.image || "/placeholder.svg"}
-                            alt={model.name}
-                            className="max-h-full object-contain"
-                          />
+            {isLoadingModels ? (
+              <div className="flex justify-center items-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+              </div>
+            ) : (
+              <>
+                {/* Botones de navegación del carrusel */}
+                <div className="flex justify-end mb-4 space-x-4">
+                  <button
+                    onClick={handlePrev}
+                    className="bg-white/80 hover:bg-white p-2 rounded-full shadow transition"
+                  >
+                    <ChevronLeft className="h-6 w-6 text-blue-600" />
+                  </button>
+                  <button
+                    onClick={handleNext}
+                    className="bg-white/80 hover:bg-white p-2 rounded-full shadow transition"
+                  >
+                    <ChevronRight className="h-6 w-6 text-blue-600" />
+                  </button>
+                </div>
+
+                {/* Carrusel */}
+                <div className="relative px-8 mx-5">
+                  {filteredModels.length > 0 ? (
+                    <Slider {...sliderSettings} ref={sliderRef}>
+                      {filteredModels.map((model, index) => (
+                        <div key={index} className="px-2">
+                          <div
+                            className={`p-4 rounded-xl text-center cursor-pointer transition-all ${
+                              selectedModel?.value === model.value
+                                ? "bg-blue-600 text-white"
+                                : "bg-blue-100 text-blue-800 hover:bg-blue-200"
+                            }`}
+                            onClick={() => !autoSelect && setSelectedModel(model)}
+                          >
+                            <div className="flex justify-center items-center h-24 mb-2">
+                              <img
+                                src={model.image || "/placeholder.svg"}
+                                alt={model.name}
+                                className="max-h-full max-w-full object-contain rounded-lg"
+                              />
+                            </div>
+                            <p className="text-sm font-medium">{model.name}</p>
+                          </div>
                         </div>
-                        <p className="text-sm font-medium">{model.name}</p>
-                      </div>
-                    </div>
-                  ))}
-                </Slider>
-              ) : (
-                <p className="text-center text-blue-500">
-                  No se encontraron modelos de IA que coincidan con tu búsqueda.
-                </p>
-              )}
-            </div>
+                      ))}
+                    </Slider>
+                  ) : (
+                    <p className="text-center text-blue-500">
+                      No se encontraron modelos de IA que coincidan con tu búsqueda.
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
 
             {selectedModel && (
               <p className="mt-4 text-center font-medium text-blue-700">Modelo seleccionado: {selectedModel.name}</p>
@@ -346,8 +439,10 @@ export default function Dashboard() {
         {isGenerating && (
           <Alert className="mt-6 bg-blue-50 border-blue-200 text-blue-800">
             <div className="flex items-center">
-              <div className="mr-3 animate-spin h-4 w-4 rounded-full border-2 border-solid border-blue-600 border-r-transparent"></div>
-              <AlertDescription>Se está generando el examen, espera por favor...</AlertDescription>
+              <div className="mr-3 inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-blue-600 border-r-transparent"></div>
+              <AlertDescription className="font-medium">
+                Se está generando el examen, espera por favor...
+              </AlertDescription>
             </div>
           </Alert>
         )}
@@ -356,7 +451,9 @@ export default function Dashboard() {
           <Button
             onClick={() => handleGenerate("exam")}
             disabled={!selectedModel || files.length === 0 || isGenerating}
-            className="flex items-center shadow-md rounded-xl bg-blue-700 hover:bg-blue-800 text-white"
+            className={`flex items-center shadow-md rounded-xl ${
+              isGenerating ? "bg-blue-400 cursor-not-allowed" : "bg-blue-700 hover:bg-blue-800 text-white"
+            }`}
           >
             <BookOpen className="mr-2 h-4 w-4" />
             {isGenerating ? "Generando examen..." : "Crear examen"}

@@ -10,7 +10,8 @@ import { useRouter } from "next/navigation"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
 // URL base del backend
-const API_URL = "https://9aca-2a01-4f8-1c1c-7c0e-00-1.ngrok-free.app"
+
+const API_URL = "https://7a55-2a01-4f8-1c1c-7c0e-00-1.ngrok-free.app"
 
 export default function Login() {
   const [email, setEmail] = useState("")
