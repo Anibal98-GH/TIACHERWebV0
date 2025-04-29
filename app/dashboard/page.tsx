@@ -61,7 +61,7 @@ export default function Dashboard() {
   // Datos de ejemplo para usar en caso de error
   const exampleModels = [
     { name: "Chat GPT 4.5 preview", value: "gpt-4.5-preview", image: "/images/gpt-logo.png" },
-    { name: "Grok 3 Beta", value: "grok-3-beta", image: "/images/grok-logo.png" },
+    { name: "Grok 3 Beta", value: "x-ai/grok-3-beta", image: "/images/grok-logo.png" },
     { name: "Gemini 1.5 pro", value: "gemini-1.5-pro", image: "/images/gemini-logo.png" },
     { name: "Claude 3.5 Sonnet", value: "claude-3-5-sonnet", image: "/images/claude-logo.png" },
     { name: "OpenAI GPT 4o mini", value: "gpt-4o-mini", image: "/images/gpt-logo.png" },
