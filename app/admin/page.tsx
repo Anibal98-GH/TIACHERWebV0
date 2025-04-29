@@ -17,7 +17,7 @@ interface Usuario {
 }
 
 // URL base del proxy
-const API_BASE = "/api"
+const API_BASE = "http://188.34.195.5";
 
 export default function Admin() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([])

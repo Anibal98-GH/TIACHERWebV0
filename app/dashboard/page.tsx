@@ -16,7 +16,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 // Usamos rutas relativas para aprovechar el proxy
-const API_BASE = "/api"
+const API_BASE = "http://188.34.195.5";
 
 export default function Dashboard() {
   const [aiModels, setAiModels] = useState<{ name: string; value: string; image: string }[]>([])

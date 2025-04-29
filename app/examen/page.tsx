@@ -11,7 +11,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 // URL base del proxy
-const API_BASE = "/api"
+const API_BASE = "http://188.34.195.5";
 
 // Tipo para una respuesta
 interface Respuesta {
