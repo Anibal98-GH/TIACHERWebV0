@@ -15,8 +15,8 @@ import "slick-carousel/slick/slick-theme.css"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
-// URL base del backend
-const API_URL = "https://7a55-2a01-4f8-1c1c-7c0e-00-1.ngrok-free.app"
+// Usamos rutas relativas para aprovechar el proxy
+const API_BASE = "/api"
 
 export default function Dashboard() {
   const [aiModels, setAiModels] = useState<{ name: string; value: string; image: string }[]>([])
@@ -82,15 +82,16 @@ export default function Dashboard() {
       setLoadError(null)
 
       try {
-        // Intentar cargar desde la API
-        const response = await fetch(`${API_URL}/api/models/all`, {
+        // Intentar cargar desde la API usando el proxy
+        const response = await fetch(`${API_BASE}/models/all`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
             Accept: "application/json",
           },
-          credentials: "include",
+          // No es necesario incluir credentials cuando usamos el proxy
+          // ya que las cookies se enviarán automáticamente
         })
 
         if (!response.ok) {
@@ -186,12 +187,12 @@ export default function Dashboard() {
         throw new Error("No se encontró el token de autenticación")
       }
 
-      const res = await fetch(`${API_URL}/api/exam/create`, {
+      // Usar el proxy para la solicitud de creación de examen
+      const res = await fetch(`${API_BASE}/exam/create`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        credentials: "include",
         body: formData,
       })
 

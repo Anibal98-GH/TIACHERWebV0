@@ -10,9 +10,8 @@ import { LogOut, Save, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
-// URL base del backend
-
-const API_URL = "https://7a55-2a01-4f8-1c1c-7c0e-00-1.ngrok-free.app"
+// URL base del proxy
+const API_BASE = "/api"
 
 // Tipo para una respuesta
 interface Respuesta {
@@ -44,14 +43,14 @@ export default function ExamenCreado() {
   useEffect(() => {
     const token = localStorage.getItem("token")
     if (!token) {
-        router.push("/login")
-        return
+      router.push("/login")
+      return
     }
     const id = localStorage.getItem("examId")
     if (!id) {
-        router.push("/dashboard")
-        return
-    }else{
+      router.push("/dashboard")
+      return
+    } else {
       setExamId(id)
     }
     console.log(id)
@@ -219,15 +218,19 @@ export default function ExamenCreado() {
         preguntas: preguntasConRespuestas,
       }
 
-      // Enviar datos al backend
-      const response = await fetch(`${API_URL}/api/exam/final`, {
+      const token = localStorage.getItem("token")
+      if (!token) {
+        throw new Error("No se encontró el token de autenticación")
+      }
+
+      // Enviar datos al backend usando el proxy
+      const response = await fetch(`${API_BASE}/exam/final`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: "Bearer " + localStorage.getItem("token"),
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(datosExamen),
-        credentials: "include",
       })
 
       if (!response.ok) {

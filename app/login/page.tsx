@@ -9,9 +9,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { useRouter } from "next/navigation"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
-// URL base del backend
-
-const API_URL = "https://7a55-2a01-4f8-1c1c-7c0e-00-1.ngrok-free.app"
+// URL base del proxy
+const API_BASE = "/api"
 
 export default function Login() {
   const [email, setEmail] = useState("")
@@ -31,9 +30,8 @@ export default function Login() {
       return
     }
 
-
     try {
-      const response = await fetch(`${API_URL}/api/login`, {
+      const response = await fetch(`${API_BASE}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -43,7 +41,6 @@ export default function Login() {
           mail: email,
           password: password,
         }),
-        credentials: "include",
       })
 
       // Verificamos si la respuesta es JSON

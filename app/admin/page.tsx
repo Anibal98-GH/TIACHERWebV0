@@ -16,8 +16,8 @@ interface Usuario {
   rol: string
 }
 
-// URL base del backend
-const API_URL = "https://7a55-2a01-4f8-1c1c-7c0e-00-1.ngrok-free.app"
+// URL base del proxy
+const API_BASE = "/api"
 
 export default function Admin() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
@@ -43,11 +43,10 @@ export default function Admin() {
     setError("")
 
     try {
-      const response = await fetch(`${API_URL}/api/admin/users`, {
+      const response = await fetch(`${API_BASE}/admin/users`, {
         method: "GET",
-        credentials: "include",
         headers: {
-          Authorization: "Bearer " + tokenValue,
+          Authorization: `Bearer ${tokenValue}`,
         },
       })
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
@@ -83,14 +82,13 @@ export default function Admin() {
     if (!token) return
 
     try {
-      await fetch(`${API_URL}/api/admin/users/${id}/rol`, {
+      await fetch(`${API_BASE}/admin/users/${id}/rol`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: "Bearer " + token,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ rol: nuevoRol }),
-        credentials: "include",
       })
 
       // Actualizar la lista de usuarios

@@ -9,8 +9,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { useRouter } from "next/navigation"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 
-
-const API_URL = "https://7a55-2a01-4f8-1c1c-7c0e-00-1.ngrok-free.app"
+// URL base del proxy
+const API_BASE = "/api"
 
 export default function Register() {
   const [email, setEmail] = useState("")
@@ -27,7 +27,7 @@ export default function Register() {
     setIsLoading(true)
     setError("")
     setSuccess("")
-    
+
     const token = localStorage.getItem("token")
     if (token) {
       router.push("/dashboard")
@@ -47,7 +47,7 @@ export default function Register() {
     }
 
     try {
-      const response = await fetch(`${API_URL}/api/register`, {
+      const response = await fetch(`${API_BASE}/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
