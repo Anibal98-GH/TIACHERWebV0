@@ -11,7 +11,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 // URL base del proxy
-const API_BASE = "https://anibal98.com/api";
+const API_BASE = "https://anibal98.com/api"
 
 // Tipo para una respuesta
 interface Respuesta {
@@ -300,12 +300,12 @@ export default function ExamenCreado() {
           <div className="flex space-x-2">
             <Button
               variant="outline"
-              className="bg-green-500 text-white border-green-400 hover:bg-green-600"
+              className="bg-white text-[#3E4ED8] border-[#3E4ED8] hover:bg-gray-50"
               onClick={guardarExamen}
               disabled={isSaving}
             >
               <Save className="mr-2 h-4 w-4" />
-              {isSaving ? "Guardando..." : "Guardar"}
+              {isSaving ? "Descargando..." : "Descargar"}
             </Button>
             <Button variant="outline" className="bg-red-500 text-white border-red-400 hover:bg-red-600" asChild>
               <Link
@@ -395,11 +395,11 @@ export default function ExamenCreado() {
         <div className="flex justify-center mt-8">
           <Button
             onClick={guardarExamen}
-            className="bg-blue-700 hover:bg-blue-800 text-white shadow-md rounded-xl px-8"
+            className="bg-white hover:bg-gray-50 text-[#3E4ED8] border border-[#3E4ED8] shadow-md rounded-xl px-8"
             disabled={isSaving}
           >
             <Save className="mr-2 h-4 w-4" />
-            {isSaving ? "Guardando Examen..." : "Guardar Examen"}
+            {isSaving ? "Descargando Examen..." : "Descargar Examen"}
           </Button>
         </div>
       </div>

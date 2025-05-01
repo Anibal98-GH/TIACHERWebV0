@@ -16,7 +16,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 // Usamos rutas relativas para aprovechar el proxy
-const API_BASE = "https://anibal98.com/api";
+const API_BASE = "https://anibal98.com/api"
 export default function Dashboard() {
   const [aiModels, setAiModels] = useState<{ name: string; value: string; image: string }[]>([])
   const [selectedModel, setSelectedModel] = useState<{ name: string; value: string; image: string } | null>(null)
@@ -89,7 +89,6 @@ export default function Dashboard() {
             Accept: "application/json",
           },
         })
-
 
         if (!response.ok) {
           throw new Error(`Error HTTP: ${response.status}`)
@@ -246,11 +245,7 @@ export default function Dashboard() {
           <h1 className="text-4xl font-bold text-white">TIACHER</h1>
           <div className="flex space-x-2">
             {isAdmin && (
-              <Button
-                variant="outline"
-                className="bg-purple-500 text-white border-purple-400 hover:bg-purple-600"
-                asChild
-              >
+              <Button variant="outline" className="bg-white text-[#3E4ED8] border-[#3E4ED8] hover:bg-gray-50" asChild>
                 <Link href="/admin">
                   <Settings className="mr-2 h-4 w-4" />
                   Administrar
