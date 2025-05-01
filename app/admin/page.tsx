@@ -114,13 +114,13 @@ export default function Admin() {
                 <ArrowLeft className="h-4 w-4" />
               </Link>
             </Button>
-            <h1 className="text-4xl font-bold text-white">Panel de Administración</h1>
+            <h1 className="text-4xl font-bold text-white">Panel de administración</h1>
           </div>
         </div>
 
         <Card className="border-blue-100 rounded-xl overflow-hidden mb-8">
           <CardHeader className="bg-blue-50">
-            <CardTitle className="text-blue-700">Gestión de Usuarios</CardTitle>
+            <CardTitle className="text-blue-700">Gestión de usuarios</CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
             {error && (

@@ -295,7 +295,7 @@ export default function ExamenCreado() {
                 <ArrowLeft className="h-4 w-4" />
               </Link>
             </Button>
-            <h1 className="text-4xl font-bold text-white">Examen Creado</h1>
+            <h1 className="text-4xl font-bold text-white">Examen creado</h1>
           </div>
           <div className="flex space-x-2">
             <Button
@@ -315,7 +315,7 @@ export default function ExamenCreado() {
                 }}
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                Cerrar Sesión
+                Cerrar sesión
               </Link>
             </Button>
           </div>
@@ -323,12 +323,12 @@ export default function ExamenCreado() {
 
         <Card className="border-blue-100 rounded-xl overflow-hidden mb-8">
           <CardHeader className="bg-blue-50">
-            <CardTitle className="text-blue-700">Información del Examen</CardTitle>
+            <CardTitle className="text-blue-700">Información del examen</CardTitle>
           </CardHeader>
           <CardContent className="pt-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-blue-700 mb-1">Título del Examen</label>
+                <label className="block text-sm font-medium text-blue-700 mb-1">Título del examen</label>
                 <Input value={title} onChange={(e) => setTitle(e.target.value)} className="border-blue-200" />
               </div>
               <div>
@@ -399,7 +399,7 @@ export default function ExamenCreado() {
             disabled={isSaving}
           >
             <Save className="mr-2 h-4 w-4" />
-            {isSaving ? "Descargando Examen..." : "Descargar Examen"}
+            {isSaving ? "Descargando examen..." : "Descargar examen"}
           </Button>
         </div>
       </div>

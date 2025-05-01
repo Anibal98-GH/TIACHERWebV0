@@ -84,7 +84,7 @@ export default function Login() {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-r from-blue-400 to-blue-600">
       <Card className="w-[350px]">
         <CardHeader className="bg-blue-50">
-          <CardTitle className="text-blue-700">Iniciar Sesión</CardTitle>
+          <CardTitle className="text-blue-700">Iniciar sesión</CardTitle>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="pt-6">
